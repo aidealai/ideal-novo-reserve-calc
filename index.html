@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reserve Allocations Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            background-color: #fff;
+            padding: 30px;
+            margin: auto;
+            box-shadow: 0px 0px 10px #ccc;
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input[type='number'] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 25px;
+            padding: 15px;
+            width: 100%;
+            font-size: 18px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .results {
+            margin-top: 35px;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+        .results h2 {
+            margin-bottom: 20px;
+        }
+        .results p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .error {
+            color: red;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        @media (max-width: 600px) {
+            body {
+                margin: 20px;
+            }
+            .container {
+                padding: 20px;
+            }
+            button {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Reserve Allocations Calculator</h1>
+
+    <label for="deposit">Deposit Amount ($):</label>
+    <input type="number" id="deposit" step="0.01" min="0" placeholder="Enter deposit amount">
+
+    <label for="oe_percentage">Operating Expenses % Allocation:</label>
+    <input type="number" id="oe_percentage" value="10" step="0.01" min="0" max="100">
+
+    <label for="p1_ownership">Partner 1 Ownership %:</label>
+    <input type="number" id="p1_ownership" value="51" step="0.01" min="0" max="100">
+
+    <label for="p1_tax_rate">Partner 1 Tax Rate %:</label>
+    <input type="number" id="p1_tax_rate" value="30" step="0.01" min="0" max="100">
+
+    <label for="p2_ownership">Partner 2 Ownership %:</label>
+    <input type="number" id="p2_ownership" value="49" step="0.01" min="0" max="100">
+
+    <label for="p2_tax_rate">Partner 2 Tax Rate %:</label>
+    <input type="number" id="p2_tax_rate" value="30" step="0.01" min="0" max="100">
+
+    <button onclick="calculateAllocations()">Calculate</button>
+
+    <div id="error" class="error"></div>
+
+    <div class="results" id="results" style="display:none;">
+        <h2>Allocations:</h2>
+        <p>Operating Expenses: <strong id="operating_expenses">$0.00</strong></p>
+        <p>Partner 1 Net Share: <strong id="p1_net">$0.00</strong></p>
+        <p>Partner 1 Taxes: <strong id="p1_tax">$0.00</strong></p>
+        <p>Partner 2 Net Share: <strong id="p2_net">$0.00</strong></p>
+        <p>Partner 2 Taxes: <strong id="p2_tax">$0.00</strong></p>
+    </div>
+</div>
+
+<script>
+function calculateAllocations() {
+    // Clear previous error
+    document.getElementById('error').innerText = '';
+    document.getElementById('results').style.display = 'none';
+
+    try {
+        // Get input values
+        var deposit = parseFloat(document.getElementById('deposit').value);
+        var oe_percentage = parseFloat(document.getElementById('oe_percentage').value) / 100;
+        var p1_ownership = parseFloat(document.getElementById('p1_ownership').value) / 100;
+        var p1_tax_rate = parseFloat(document.getElementById('p1_tax_rate').value) / 100;
+        var p2_ownership = parseFloat(document.getElementById('p2_ownership').value) / 100;
+        var p2_tax_rate = parseFloat(document.getElementById('p2_tax_rate').value) / 100;
+
+        // Input validation
+        if (isNaN(deposit) || deposit <= 0) throw 'Please enter a valid deposit amount.';
+        if (isNaN(oe_percentage) || oe_percentage < 0 || oe_percentage > 1) throw 'Please enter a valid operating expenses percentage (0-100).';
+        if (isNaN(p1_ownership) || p1_ownership < 0 || p1_ownership > 1) throw 'Please enter a valid Partner 1 ownership percentage (0-100).';
+        if (isNaN(p1_tax_rate) || p1_tax_rate < 0 || p1_tax_rate > 1) throw 'Please enter a valid Partner 1 tax rate percentage (0-100).';
+        if (isNaN(p2_ownership) || p2_ownership < 0 || p2_ownership > 1) throw 'Please enter a valid Partner 2 ownership percentage (0-100).';
+        if (isNaN(p2_tax_rate) || p2_tax_rate < 0 || p2_tax_rate > 1) throw 'Please enter a valid Partner 2 tax rate percentage (0-100).';
+
+        // Check that ownership percentages sum to 100%
+        if (Math.abs(p1_ownership + p2_ownership - 1.0) > 0.01) throw 'Ownership percentages must sum to 100%.';
+
+        // Calculations
+        var operating_expenses = oe_percentage * deposit;
+        var remaining = deposit - operating_expenses;
+        var p1_share_bt = p1_ownership * remaining;
+        var p2_share_bt = p2_ownership * remaining;
+        var p1_tax = p1_tax_rate * p1_share_bt;
+        var p2_tax = p2_tax_rate * p2_share_bt;
+        var p1_net = p1_share_bt - p1_tax;
+        var p2_net = p2_share_bt - p2_tax;
+
+        // Display results
+        document.getElementById('operating_expenses').innerText = formatCurrency(operating_expenses);
+        document.getElementById('p1_net').innerText = formatCurrency(p1_net);
+        document.getElementById('p1_tax').innerText = formatCurrency(p1_tax);
+        document.getElementById('p2_net').innerText = formatCurrency(p2_net);
+        document.getElementById('p2_tax').innerText = formatCurrency(p2_tax);
+        document.getElementById('results').style.display = 'block';
+
+    } catch (err) {
+        document.getElementById('error').innerText = err;
+    }
+}
+
+function formatCurrency(amount) {
+    return '$' + amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+</script>
+
+</body>
+</html>
